@@ -71,6 +71,33 @@ def performance_summary(history: pd.DataFrame, periods_per_year: int) -> pd.Seri
 	benchmark_annualized_vol = float(benchmark_returns.std(ddof=1) * np.sqrt(periods_per_year))
 	active_return = strategy_returns - benchmark_returns.reindex(strategy_returns.index).fillna(0.0)
 	tracking_error = float(active_return.std(ddof=1) * np.sqrt(periods_per_year)) if len(active_return) > 1 else np.nan
+ 
+	# ── NUOVO ──────────────────────────────────────────────────────────────
+    # Rendimento attivo annualizzato (moyenne des rendements actifs × périodes/an)
+	active_return_annualized = float(active_return.mean() * periods_per_year)
+
+    # Information Ratio = rendement actif annualisé / Tracking Error
+    # Mesure si la déviation par rapport au benchmark est bien rémunérée.
+    # IR > 0.5 est généralement considéré comme bon ; IR > 1.0 exceptionnel.
+	information_ratio = (
+        active_return_annualized / tracking_error
+        if (pd.notna(tracking_error) and tracking_error > 0)
+        else np.nan
+    )
+
+    # Calmar Ratio = CAGR / |Max Drawdown|
+    # Alternative au Sharpe : pénalise les grandes pertes extrêmes plutôt que la volatilité.
+	max_dd = _max_drawdown(nav)
+	calmar_ratio = annualized_return / abs(max_dd) if max_dd < 0 else np.nan
+ 
+ 
+ 	################
+	alpha = 0.05
+	var_95  = float(np.percentile(strategy_returns, alpha * 100))
+	cvar_95 = float(strategy_returns[strategy_returns <= var_95].mean())
+ 
+    # ── FIN NOUVEAU ────────────────────────────────────────────────────────
+
 
 	return pd.Series(
 		{
@@ -85,6 +112,12 @@ def performance_summary(history: pd.DataFrame, periods_per_year: int) -> pd.Seri
 			"Tracking error (%)": tracking_error * 100 if pd.notna(tracking_error) else np.nan,
 			"Average turnover": float(history["turnover"].fillna(0.0).mean()),
 			"Rebalance count": int(history["rebalance"].sum()),
+			####
+			"Calmar Ratio": calmar_ratio,
+            "Active return annualized (%)": active_return_annualized * 100,
+            "Information Ratio": information_ratio,
+            "VaR 95% daily (%)": var_95 * 100,
+			"CVaR 95% daily (%)": cvar_95 * 100,
 		}
 	)
 
