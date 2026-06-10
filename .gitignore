@@ -1,0 +1,61 @@
+# ==========================================================================
+#  portfolio_lab — .gitignore
+# ==========================================================================
+
+# --- Sorties de recherche et données NON versionnées (décision projet) ----
+# Rapports de run horodatés générés par portfolio_lab.reporting.RunReport.
+# Ce sont des ARTEFACTS reproductibles (régénérés en relançant un notebook) :
+# on ne versionne pas le bruit, seulement le code qui le produit.
+results/
+notebooks/results/
+
+# Brouillons, notebooks hérités et données privées exclus de l'audit/partage.
+not_included/
+notebooks/not_included/
+
+# --- Caches Python --------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# --- Jupyter --------------------------------------------------------------
+# Checkpoints automatiques de Jupyter (purement temporaires).
+.ipynb_checkpoints/
+# Notebooks NON nettoyés : on versionne idéalement des notebooks SANS sorties
+# (cf. nbstripout). Décommenter si vous adoptez ce workflow :
+# notebooks/*.ipynb  # (puis forcer l'ajout au cas par cas)
+
+# --- Environnements virtuels ----------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# --- Caches d'outils -------------------------------------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints
+.coverage
+htmlcov/
+
+# --- Données de marché téléchargées (ne jamais committer de gros CSV/Parquet)
+*.csv
+*.parquet
+*.pkl
+*.h5
+data_cache/
+
+# --- Spécifique OS / éditeurs ---------------------------------------------
+.DS_Store
+.DS_Store?
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
