@@ -23,11 +23,11 @@ from __future__ import annotations
 from .config import ExperimentConfig
 from .data import (clean_prices, download_prices, get_sp500_constituents,
                    make_synthetic_prices)
-from .estimators import (ConstantCorrelationCovariance, CovarianceEstimator,
-                         EmpiricalCovariance, EWMACovariance, EWMAMean,
-                         IEWMACovariance, JamesSteinMean, LedoitWolfCovariance,
-                         MeanEstimator, OASCovariance, PCAFactorMean,
-                         RollingCovariance, RollingMean, SampleMean)
+from .estimators import (BlackLittermanMean, ConstantCorrelationCovariance,
+                         CovarianceEstimator, EmpiricalCovariance, EWMACovariance,
+                         EWMAMean, IEWMACovariance, JamesSteinMean,
+                         LedoitWolfCovariance, MeanEstimator, OASCovariance,
+                         PCAFactorMean, RollingCovariance, RollingMean, SampleMean)
 from .experiment import ExperimentResult, run_experiment
 from .frequencies import annualize, periods_per_year, resample_prices
 from .frontier import efficient_frontier

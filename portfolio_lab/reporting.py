@@ -315,6 +315,14 @@ class RunReport:
             lines.append(block)
         return "\n".join(lines).rstrip() + "\n"
 
+    def to_markdown(self) -> str:
+        """Renvoie le rapport en Markdown SANS écrire de fichier.
+
+        Utile pour un téléchargement direct (ex. bouton Streamlit) ou un test : on récupère
+        la chaîne sans toucher au disque.
+        """
+        return self._render_md()
+
     def save(self, *, fmt: str = "md") -> str:
         """Écrit le rapport. `fmt` : 'md' (défaut), 'pdf' ou 'both'.
 

@@ -118,6 +118,81 @@ class PCAFactorMean(MeanEstimator):
         return Vk @ (Vk.T @ mu)            # projection de μ sur le sous-espace factoriel
 
 
+class BlackLittermanMean(MeanEstimator):
+    """Estimateur de Black-Litterman (He & Litterman, 1999).
+
+    Combine le prior CAPM (rendements d'équilibre implicites du marché) avec des
+    **vues subjectives de l'investisseur** pour produire un vecteur μ postérieur.
+
+    Formules (espace annualisé) :
+      π      = δ · Σ_ann · w_mkt            prior CAPM (rendements d'équilibre)
+      Ω      = τ · diag(P Σ_ann Pᵀ)         incertitude sur les vues (He & Litterman)
+      M      = (τΣ_ann)⁻¹ + PᵀΩ⁻¹P          précision postérieure
+      μ_BL   = M⁻¹[(τΣ_ann)⁻¹π + PᵀΩ⁻¹q]   μ postérieur annuel → converti en par-période
+
+    Paramètres
+    ----------
+    mcaps : dict {ticker: capitalisation}
+        Poids de marché proxy (capitalisations). Toute valeur positive (milliards, rangs…).
+    views : dict {ticker: rendement_annuel}
+        Vues absolues de l'investisseur, en rendement annuel (ex. {"AAPL": 0.12}).
+    delta : float
+        Aversion au risque du marché (réf. CAPM, typiquement 2–3).
+    tau : float
+        Incertitude sur le prior (typiquement 0.01–0.10 ; He & Litterman suggèrent 0.05).
+    periods_per_year : int
+        252 (daily), 52 (weekly), 12 (monthly). Nécessaire pour annualiser Σ.
+    """
+    name = "black_litterman"
+
+    def __init__(self, mcaps: dict, views: dict, delta: float = 2.5,
+                 tau: float = 0.05, periods_per_year: int = 252):
+        self.mcaps = mcaps
+        self.views = views
+        self.delta = float(delta)
+        self.tau = float(tau)
+        self.ppy = int(periods_per_year)
+
+    def estimate(self, returns: pd.DataFrame) -> np.ndarray:
+        tickers = list(returns.columns)
+        N = len(tickers)
+
+        # Σ annualisée (base pour le prior et les vues)
+        Sigma_pp  = returns.cov().values.astype(float)   # par période
+        Sigma_ann = Sigma_pp * self.ppy
+
+        # Poids de marché normalisés
+        mcap_arr = np.array([self.mcaps.get(t, 1.0) for t in tickers], dtype=float)
+        w_mkt    = mcap_arr / mcap_arr.sum()
+
+        # Prior CAPM : π = δ Σ_ann w_mkt
+        pi_ann = self.delta * Sigma_ann @ w_mkt
+
+        # Vues absolues → matrice P (K×N) et vecteur q_ann (K,)
+        view_tickers = [t for t in self.views if t in tickers]
+        K = len(view_tickers)
+        if K == 0:
+            return pi_ann / self.ppy    # aucune vue : retourne le prior CAPM par période
+
+        P     = np.zeros((K, N), dtype=float)
+        q_ann = np.zeros(K, dtype=float)
+        for k, ticker in enumerate(view_tickers):
+            j        = tickers.index(ticker)
+            P[k, j]  = 1.0
+            q_ann[k] = float(self.views[ticker])
+
+        # Ω : incertitude sur les vues proportionnelle à P Σ_ann Pᵀ
+        Omega = self.tau * np.diag(np.diag(P @ Sigma_ann @ P.T))
+
+        # Précision postérieure M et μ_BL (He & Litterman)
+        tauSigma_inv = np.linalg.inv(self.tau * Sigma_ann)
+        Omega_inv    = np.linalg.inv(Omega)
+        M            = tauSigma_inv + P.T @ Omega_inv @ P
+        mu_bl_ann    = np.linalg.solve(M, tauSigma_inv @ pi_ann + P.T @ Omega_inv @ q_ann)
+
+        return mu_bl_ann / self.ppy     # converti en rendement par période
+
+
 # --------------------------------------------------------------------------- #
 #  Covariance                                                                  #
 # --------------------------------------------------------------------------- #
