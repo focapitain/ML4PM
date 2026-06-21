@@ -40,6 +40,7 @@ from .cov_eval import (condition_number, cov_eval_summary, frobenius_error,
 from .mean_eval import (hit_rate, mae_mean, mean_eval_summary, pearson_ic,
                         rmse_mean, rolling_mean_eval, spearman_ic,
                         window_sensitivity, wmape)
+from .ml_model import MLMeanEstimator
 from .markowitz import (ConstraintSet, MarkowitzBacktestResult, MarkowitzPlusPlus,
                         PenaltySet, calibrate_markowitzpp, default_score, make_variant,
                         markowitz_metrics_table, markowitz_walk_forward,
@@ -76,7 +77,7 @@ __all__ = [
     "PCAFactorMean",
     "CovarianceEstimator", "EmpiricalCovariance", "RollingCovariance",
     "EWMACovariance", "LedoitWolfCovariance", "OASCovariance",
-    "ConstantCorrelationCovariance", "IEWMACovariance",
+    "ConstantCorrelationCovariance", "IEWMACovariance", "MLMeanEstimator",
     # optimiseurs
     "Optimizer", "AnalyticLagrangian", "CVXPYOptimizer", "ScipyOptimizer",
     "DifferentialEvolutionOptimizer", "EqualWeightOptimizer",
