@@ -28,13 +28,15 @@ benchmark_demo/
 ├── .streamlit/config.toml  # thème dark officiel (lisibilité)
 ├── core/                   # COUCHE SERVICE (testable sans navigateur)
 │   ├── registry.py         # nom ↔ objet portfolio_lab (+ libellés humains DISPLAY_NAMES)
-│   ├── services.py         # @st.cache : load_prices, run_backtest, decision_table, compare_methods
+│   ├── services.py         # @st.cache : load_prices, load_index_nav (S&P 500), run_backtest
+│   │                       #   (+ benchmark poids aléatoires), decision_table, compare_methods
 │   ├── analytics.py        # rolling metrics, régimes, distributions, corrélations, interprétations
 │   ├── constraints.py      # contraintes activées + diversification effective
 │   └── presets.py          # scénarios historiques (replay) + univers long-historique
 ├── components/             # UI réutilisable
 │   ├── theme.py            # thème sombre « desk institutionnel » (Plotly + CSS)
-│   ├── charts.py           # figures Plotly (animation, donut, locator, mouvements…)
+│   ├── charts.py           # figures Plotly (animation, donut, locator, mouvements…) ;
+│   │                       #   overlay 1/N + S&P 500 + poids aléatoires, avec légendes
 │   ├── ui.py               # timeline de décision + cartes d'insight (HTML)
 │   └── sidebar.py          # config (presets + 3 groupes), bouton Run, bandeau de santé
 └── pages/                  # 2 pages (+ le Cockpit = Cockpit.py)
@@ -50,11 +52,14 @@ déroulement s'affiche dans le **terminal** (logger `demo │`).
 
 1. **Cockpit** (accueil) — univers (**treemap secteur → actifs**, cliquable), hypothèses, et
    section **« Comprendre les réglages »** (chaque paramètre expliqué : impact + raison d'être).
-2. **Simulation** — le cœur : NAV animée (lecture auto) avec rebalancements marqués, slider
-   temporel, **panneau « Décision du portefeuille »** (volatilité estimée, corrélation, turnover,
+2. **Simulation** — le cœur : NAV animée (lecture auto) comparée à **trois références
+   identifiées par une légende** — Équipondéré 1/N, **S&P 500 (indice)** et **Poids aléatoires**
+   (référence « zéro intelligence », Dirichlet) — avec rebalancements marqués, slider temporel,
+   **panneau « Décision du portefeuille »** (volatilité estimée, corrélation, turnover,
    rebalancement) et **frise** Observation → Estimation μ → Estimation Σ → Optimisation →
    Rebalancement → Mise à jour. **Mode replay** : COVID, bear 2022, bull 2017.
-3. **Analyse** — performance (NAV, drawdown, vol/Sharpe glissants), distribution (skew/kurtosis),
+3. **Analyse** — performance (NAV comparée 1/N · S&P 500 · poids aléatoires ; drawdown,
+   vol/Sharpe glissants), distribution (skew/kurtosis),
    corrélations, **régimes** (bull/bear/forte vol) sur les graphiques, et **export d'un rapport
    Markdown** horodaté (paramètres, métriques OOS, contrôles de santé).
 
