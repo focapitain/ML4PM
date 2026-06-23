@@ -68,7 +68,8 @@ k3.metric("Max drawdown", f"{m['Max drawdown (%)']:.1f}%")
 k4.metric("Turnover moy.", f"{m['Average turnover']:.1%}")
 
 # --- Hero animé : NAV qui se remplit + donut + marqueurs de rebalancement ------------------
-st.plotly_chart(C.manager_animation(bundle.history, bundle.weights, top=12),
+st.plotly_chart(C.manager_animation(bundle.history, bundle.weights, top=12,
+                                    index_nav=bundle.index_nav, random_nav=bundle.random_nav),
                 use_container_width=True)
 
 st.divider()
@@ -89,7 +90,9 @@ ca = which_constraints_active(w_now, w_max=params["w_max"])
 row = dtable.loc[d] if d in dtable.index else None
 
 # Situer la date sur la courbe.
-st.plotly_chart(C.nav_locator(bundle.history, bundle.weights, d), use_container_width=True)
+st.plotly_chart(C.nav_locator(bundle.history, bundle.weights, d, index_nav=bundle.index_nav,
+                              random_nav=bundle.random_nav),
+                use_container_width=True)
 
 # Panneau « Décision » : intrants du jour.
 est_vol = float(row["est_vol"]) if row is not None else float("nan")

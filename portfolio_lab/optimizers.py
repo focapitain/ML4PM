@@ -240,6 +240,23 @@ class EqualWeightOptimizer(Optimizer):
         return _cap_and_renormalize(np.ones(N) / N, w_max)
 
 
+class RandomWeightOptimizer(Optimizer):
+    """Poids tirés au hasard (Dirichlet) puis plafonnés à w_max — référence « zéro
+    intelligence » (le singe de Malkiel). Redessine un portefeuille à CHAQUE rebalancement :
+    turnover élevé, donc coûts élevés (un rebalanceur aveugle se pénalise lui-même).
+    Reproductible via la graine ; ignore μ et Σ."""
+    name = "random_weight"
+
+    def __init__(self, seed: int = RANDOM_SEED):
+        self.rng = np.random.default_rng(seed)
+
+    def solve(self, mu, Sigma, *, objective=None, rf=0.0, long_only=True,
+              w_max=1.0, risk_aversion=3.0, mu_target=None):
+        N = len(mu)
+        w = self.rng.dirichlet(np.ones(N))
+        return _cap_and_renormalize(w, w_max)
+
+
 class InverseVolatilityOptimizer(Optimizer):
     """Poids ∝ 1/σ_i. Ignore les corrélations ; n'utilise que la diagonale de Σ."""
     name = "inverse_vol"
@@ -303,6 +320,6 @@ __all__ = [
     "portfolio_stats", "Optimizer",
     "AnalyticLagrangian", "CVXPYOptimizer", "ScipyOptimizer",
     "DifferentialEvolutionOptimizer",
-    "EqualWeightOptimizer", "InverseVolatilityOptimizer",
+    "EqualWeightOptimizer", "RandomWeightOptimizer", "InverseVolatilityOptimizer",
     "RiskParityOptimizer", "MaxDiversificationOptimizer",
 ]

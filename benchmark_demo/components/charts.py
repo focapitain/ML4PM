@@ -31,10 +31,22 @@ def _empty(msg: str = "Aucune donnée") -> go.Figure:
 # --------------------------------------------------------------------------- #
 #  Page 3 — Performance                                                        #
 # --------------------------------------------------------------------------- #
-def nav_chart(history: pd.DataFrame, *, log: bool = True) -> go.Figure:
+#: couleur dédiée au benchmark « poids aléatoires » (violet, distinct du cyan/gris/orange).
+RANDOM_COLOR = "#A855F7"
+
+
+def nav_chart(history: pd.DataFrame, *, log: bool = True,
+              index_nav: pd.Series | None = None,
+              random_nav: pd.Series | None = None) -> go.Figure:
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=history.index, y=history["benchmark_nav"], name="1/N (benchmark)",
+    fig.add_trace(go.Scatter(x=history.index, y=history["benchmark_nav"], name="Équipondéré 1/N",
                              line=dict(color=T.BENCH, width=1.6, dash="dash")))
+    if index_nav is not None and len(index_nav):
+        fig.add_trace(go.Scatter(x=index_nav.index, y=index_nav.values, name="S&P 500 (indice)",
+                                 line=dict(color=T.WARN, width=1.6, dash="dot")))
+    if random_nav is not None and len(random_nav):
+        fig.add_trace(go.Scatter(x=random_nav.index, y=random_nav.values, name="Poids aléatoires",
+                                 line=dict(color=RANDOM_COLOR, width=1.4, dash="dashdot")))
     fig.add_trace(go.Scatter(x=history.index, y=history["strategy_nav"], name="Stratégie",
                              line=dict(color=T.ACCENT, width=2.4)))
     fig.update_yaxes(type="log" if log else "linear")
@@ -208,10 +220,14 @@ def movements_bar(delta: pd.Series, *, top: int = 10) -> go.Figure:
 #  Page 2 — Animation « gérant en direct »                                     #
 # --------------------------------------------------------------------------- #
 def manager_animation(history: pd.DataFrame, weights: pd.DataFrame, *, top: int = 8,
-                      max_frames: int = 60) -> go.Figure:
+                      max_frames: int = 60, index_nav: pd.Series | None = None,
+                      random_nav: pd.Series | None = None) -> go.Figure:
     """Animation épurée « gérant en direct » : à gauche la VALEUR qui se remplit (aire), à
     droite un DONUT d'allocation qui se déforme en douceur. Frames sous-échantillonnées
     (≤ `max_frames`) pour une simulation accélérée et fluide. Play/Pause + slider intégrés.
+
+    Trace, à côté de la stratégie : le 1/N (équipondéré), le S&P 500 (si `index_nav`) et un
+    portefeuille à poids aléatoires (si `random_nav`). Une légende identifie chaque courbe.
     """
     if weights.empty:
         return _empty("Pas de rebalancements à animer")
@@ -223,6 +239,12 @@ def manager_animation(history: pd.DataFrame, weights: pd.DataFrame, *, top: int 
 
     nav = history["strategy_nav"]
     bench = history["benchmark_nav"]
+    sp = (index_nav.reindex(nav.index).ffill() if index_nav is not None and len(index_nav)
+          else pd.Series(dtype=float))
+    has_sp = bool(len(sp.dropna()))
+    rnd = (random_nav.reindex(nav.index).ffill() if random_nav is not None and len(random_nav)
+           else pd.Series(dtype=float))
+    has_rnd = bool(len(rnd.dropna()))
 
     # Couleur STABLE par actif (sur l'union des titres jamais détenus > 1 %) : un actif
     # garde sa couleur d'une date à l'autre. On affiche les positions RÉELLES du jour.
@@ -245,15 +267,23 @@ def manager_animation(history: pd.DataFrame, weights: pd.DataFrame, *, top: int 
 
     d0 = dates[0]
     nav0, bench0 = nav.loc[:d0], bench.loc[:d0]
+    sp0 = sp.loc[:d0] if has_sp else pd.Series(dtype=float)
+    rnd0 = rnd.loc[:d0] if has_rnd else pd.Series(dtype=float)
     lab0, val0, col0 = donut(d0)
-    fig.add_trace(go.Scatter(x=bench0.index, y=bench0.values, name="Marché (1/N)",
+    fig.add_trace(go.Scatter(x=bench0.index, y=bench0.values, name="Équipondéré 1/N",
                              line=dict(color=T.BENCH, width=1.6, dash="dash")), row=1, col=1)
+    fig.add_trace(go.Scatter(x=sp0.index, y=sp0.values, name="S&P 500 (indice)",
+                             line=dict(color=T.WARN, width=1.4, dash="dot"),
+                             showlegend=has_sp), row=1, col=1)
+    fig.add_trace(go.Scatter(x=rnd0.index, y=rnd0.values, name="Poids aléatoires",
+                             line=dict(color=RANDOM_COLOR, width=1.4, dash="dashdot"),
+                             showlegend=has_rnd), row=1, col=1)
     fig.add_trace(go.Scatter(x=nav0.index, y=nav0.values, name="Stratégie", fill="tozeroy",
                              line=dict(color=T.ACCENT, width=2.8),
                              fillcolor="rgba(40,192,199,0.18)"), row=1, col=1)
     fig.add_trace(go.Scatter(x=[d0], y=[float(nav.loc[d0])], mode="markers", name="Rebalancement",
                              marker=dict(color=T.BG, size=7, symbol="diamond",
-                                         line=dict(color=T.ACCENT, width=1.5)),
+                                         line=dict(color=T.ACCENT, width=1.5)), showlegend=False,
                              hovertemplate="Rebalancement<extra></extra>"), row=1, col=1)
     fig.add_trace(go.Pie(labels=lab0, values=val0, hole=0.62, sort=True,
                          direction="clockwise", marker=dict(colors=col0, line=dict(color=T.BG, width=1.5)),
@@ -264,18 +294,24 @@ def manager_animation(history: pd.DataFrame, weights: pd.DataFrame, *, top: int 
     frames = []
     for d in dates:
         navd, benchd = nav.loc[:d], bench.loc[:d]
+        spd = sp.loc[:d] if has_sp else pd.Series(dtype=float)
+        rndd = rnd.loc[:d] if has_rnd else pd.Series(dtype=float)
         lab, val, colr = donut(d)
         mk = [x for x in dates if x <= d]
         frames.append(go.Frame(name=str(pd.Timestamp(d).date()), data=[
             go.Scatter(x=benchd.index, y=benchd.values),
+            go.Scatter(x=spd.index, y=spd.values),
+            go.Scatter(x=rndd.index, y=rndd.values),
             go.Scatter(x=navd.index, y=navd.values),
             go.Scatter(x=mk, y=[float(nav.loc[x]) for x in mk]),
             go.Pie(labels=lab, values=val, marker=dict(colors=colr, line=dict(color=T.BG, width=1.5))),
-        ], traces=[0, 1, 2, 3]))
+        ], traces=[0, 1, 2, 3, 4, 5]))
     fig.frames = frames
 
-    lo = float(min(nav.min(), bench.min())) * 0.97
-    hi = float(max(nav.max(), bench.max())) * 1.04
+    _mins = [nav.min(), bench.min()] + ([sp.min()] if has_sp else []) + ([rnd.min()] if has_rnd else [])
+    _maxs = [nav.max(), bench.max()] + ([sp.max()] if has_sp else []) + ([rnd.max()] if has_rnd else [])
+    lo = float(min(_mins)) * 0.97
+    hi = float(max(_maxs)) * 1.04
     fig.update_yaxes(title_text=None, range=[lo, hi], row=1, col=1)
     fig.update_xaxes(range=[nav.index.min(), nav.index.max()], row=1, col=1)
 
@@ -289,7 +325,10 @@ def manager_animation(history: pd.DataFrame, weights: pd.DataFrame, *, top: int 
     pause = dict(label="⏸  Pause", method="animate",
                  args=[[None], dict(frame=dict(duration=0, redraw=False), mode="immediate")])
     fig.update_layout(
-        showlegend=False,
+        showlegend=True,
+        legend=dict(orientation="v", x=0.01, y=0.99, xanchor="left", yanchor="top",
+                    bgcolor="rgba(14,17,23,0.55)", bordercolor=T.GRID, borderwidth=1,
+                    font=dict(size=11, color=T.TEXT)),
         updatemenus=[
             dict(type="buttons", direction="left", x=0.0, y=1.22, xanchor="left",
                  showactive=False, pad=dict(r=8, t=4),
@@ -310,7 +349,9 @@ def manager_animation(history: pd.DataFrame, weights: pd.DataFrame, *, top: int 
     return T.apply(fig, height=500)
 
 
-def nav_locator(history: pd.DataFrame, weights: pd.DataFrame, selected_date) -> go.Figure:
+def nav_locator(history: pd.DataFrame, weights: pd.DataFrame, selected_date,
+                index_nav: pd.Series | None = None,
+                random_nav: pd.Series | None = None) -> go.Figure:
     """NAV avec TICKS de rebalancement et la date sélectionnée surlignée (situe le curseur
     temporel sur la courbe). Compact : accompagne le slider de la page Simulation."""
     nav = history["strategy_nav"]
@@ -319,8 +360,14 @@ def nav_locator(history: pd.DataFrame, weights: pd.DataFrame, selected_date) -> 
     stride = max(1, len(rdates) // 80)
     ticks = rdates[::stride]
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=bench.index, y=bench.values, name="Marché (1/N)",
+    fig.add_trace(go.Scatter(x=bench.index, y=bench.values, name="Équipondéré 1/N",
                              line=dict(color=T.BENCH, width=1.2, dash="dash")))
+    if index_nav is not None and len(index_nav):
+        fig.add_trace(go.Scatter(x=index_nav.index, y=index_nav.values, name="S&P 500 (indice)",
+                                 line=dict(color=T.WARN, width=1.2, dash="dot")))
+    if random_nav is not None and len(random_nav):
+        fig.add_trace(go.Scatter(x=random_nav.index, y=random_nav.values, name="Poids aléatoires",
+                                 line=dict(color=RANDOM_COLOR, width=1.2, dash="dashdot")))
     fig.add_trace(go.Scatter(x=nav.index, y=nav.values, name="Stratégie",
                              line=dict(color=T.ACCENT, width=2.2)))
     fig.add_trace(go.Scatter(x=ticks, y=[float(nav.loc[d]) for d in ticks], mode="markers",
@@ -333,7 +380,9 @@ def nav_locator(history: pd.DataFrame, weights: pd.DataFrame, selected_date) -> 
             fig.add_trace(go.Scatter(x=[sd], y=[float(nav.loc[sd])], mode="markers",
                           name="Sélection", marker=dict(color=T.WARN, size=12, symbol="circle",
                           line=dict(color=T.BG, width=1.5))))
-    fig.update_layout(showlegend=False)
+    fig.update_layout(showlegend=True,
+                      legend=dict(orientation="h", y=1.02, x=0.0, font=dict(size=10),
+                                  bgcolor="rgba(0,0,0,0)"))
     return T.apply(fig, height=240, title=None)
 
 

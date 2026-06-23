@@ -47,8 +47,8 @@ from .markowitz import (ConstraintSet, MarkowitzBacktestResult, MarkowitzPlusPlu
 from .optimizers import (AnalyticLagrangian, CVXPYOptimizer,
                          DifferentialEvolutionOptimizer, EqualWeightOptimizer,
                          InverseVolatilityOptimizer, MaxDiversificationOptimizer,
-                         Optimizer, RiskParityOptimizer, ScipyOptimizer,
-                         portfolio_stats)
+                         Optimizer, RandomWeightOptimizer, RiskParityOptimizer,
+                         ScipyOptimizer, portfolio_stats)
 from .returns import compute_returns
 from .universe import (AllUniverse, FirstNAlphabetical, RandomN,
                        StratifiedBySector, TopN, UniverseSelector)
@@ -79,7 +79,7 @@ __all__ = [
     "ConstantCorrelationCovariance", "IEWMACovariance",
     # optimiseurs
     "Optimizer", "AnalyticLagrangian", "CVXPYOptimizer", "ScipyOptimizer",
-    "DifferentialEvolutionOptimizer", "EqualWeightOptimizer",
+    "DifferentialEvolutionOptimizer", "EqualWeightOptimizer", "RandomWeightOptimizer",
     "InverseVolatilityOptimizer", "RiskParityOptimizer",
     "MaxDiversificationOptimizer", "portfolio_stats",
     # frontière & visualisation

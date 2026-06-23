@@ -68,6 +68,8 @@ class BacktestBundle:
     prices: pd.DataFrame           # prix (ré-échantillonnés) réellement utilisés
     returns: pd.DataFrame          # rendements par période
     params: dict = field(default_factory=dict)
+    index_nav: Optional[pd.Series] = None   # NAV de l'indice S&P 500 (base 1), aligné sur l'OOS
+    random_nav: Optional[pd.Series] = None  # NAV d'un portefeuille à POIDS ALÉATOIRES (base 1)
 
     # --- raccourcis lecture (pas de calcul lourd) ---
     @property
@@ -125,6 +127,45 @@ def load_prices(universe_kind: str, n: int, start: str, end: str, frequency: str
 
 
 # --------------------------------------------------------------------------- #
+#  Indice de marché réel (S&P 500) — coût d'opportunité du gérant passif       #
+# --------------------------------------------------------------------------- #
+@cache
+def load_index_nav(start: str, end: str, frequency: str, use_synthetic: bool,
+                   symbol: str = "^GSPC") -> Optional[pd.Series]:
+    """Série de PRIX (base brute) de l'indice S&P 500 sur la période, ré-échantillonnée.
+
+    Renvoie `None` en mode synthétique (pas d'indice réel hors-ligne) ou si le
+    téléchargement échoue : l'appelant trace alors simplement stratégie vs 1/N.
+    La normalisation en base 1 est faite à l'alignement (cf. `run_backtest`).
+    """
+    if use_synthetic:
+        return None
+    try:
+        px = pl.clean_prices(pl.download_prices([symbol], start, end))
+        if px.empty:
+            return None
+        px = pl.resample_prices(px.sort_index().ffill(), frequency).dropna(how="all")
+        s = px.iloc[:, 0].dropna()
+        log.info("→ indice %s prêt : %d points", symbol, len(s))
+        return s if len(s) > 1 else None
+    except Exception as e:                               # pragma: no cover (réseau)
+        log.info("indice %s indisponible (%s) — overlay ignoré", symbol, type(e).__name__)
+        return None
+
+
+def _aligned_index_nav(index_px: Optional[pd.Series],
+                       hist_index: pd.Index) -> Optional[pd.Series]:
+    """Aligne les prix de l'indice sur l'axe temporel de l'OOS et renormalise en base 1
+    (même base que `strategy_nav`/`benchmark_nav`) pour une comparaison visuelle honnête."""
+    if index_px is None:
+        return None
+    aligned = index_px.reindex(hist_index).ffill().dropna()
+    if len(aligned) < 2:
+        return None
+    return (aligned / aligned.iloc[0]).rename("sp500_nav")
+
+
+# --------------------------------------------------------------------------- #
 #  Backtest principal (un seul run alimente les pages 1→5, 7)                  #
 # --------------------------------------------------------------------------- #
 @cache
@@ -159,9 +200,26 @@ def run_backtest(universe_kind: str, n: int, start: str, end: str, frequency: st
     log.info("✓ backtest terminé : %d rebalancements · Sharpe=%.2f · %d fallback(s) · %.1fs",
              len(res.weights_history), float(res.metrics.get("Sharpe", float("nan"))), fb,
              time.time() - t0)
+    index_px = load_index_nav(start, end, frequency, use_synthetic)
+    index_nav = _aligned_index_nav(index_px, res.history.index)
+
+    # Benchmark « zéro intelligence » : poids aléatoires (Dirichlet), redessinés à chaque
+    # rebalancement, mêmes contraintes/coûts que la stratégie. Aligné en base 1 sur l'OOS.
+    random_nav = None
+    try:
+        from dataclasses import replace
+        cfg_rand = replace(cfg, optimizer=pl.RandomWeightOptimizer(seed=seed))
+        res_rand = pl.run_walk_forward(prices, cfg_rand, backtest_config=bt_cfg,
+                                       label="Poids aléatoires")
+        rn = res_rand.history["strategy_nav"].reindex(res.history.index).ffill().dropna()
+        if len(rn) > 1:
+            random_nav = (rn / rn.iloc[0]).rename("random_nav")
+    except Exception as e:                               # pragma: no cover
+        log.info("benchmark aléatoire indisponible (%s)", type(e).__name__)
+
     return BacktestBundle(
         history=res.history, weights=res.weights_history.fillna(0.0), metrics=res.metrics,
-        prices=prices, returns=returns,
+        prices=prices, returns=returns, index_nav=index_nav, random_nav=random_nav,
         params=dict(universe_kind=universe_kind, n=n, start=start, end=end,
                     frequency=frequency, mu=mu_name, cov=cov_name, method=method_name,
                     w_max=w_max, tc_bps=tc_bps, rf=rf, est_window=est_window,
@@ -325,5 +383,5 @@ def asset_sectors(tickers: tuple) -> pd.Series:
     return s.fillna("Autre")
 
 
-__all__ = ["BacktestBundle", "load_prices", "run_backtest", "compare_methods",
-           "decision_table", "report_markdown", "asset_sectors", "cache"]
+__all__ = ["BacktestBundle", "load_prices", "load_index_nav", "run_backtest",
+           "compare_methods", "decision_table", "report_markdown", "asset_sectors", "cache"]

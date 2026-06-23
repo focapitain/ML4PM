@@ -50,7 +50,9 @@ with tab1:
     k3.metric("Volatilité", f"{m['Vol annualized (%)']:.1f}%")
     k4.metric("Max drawdown", f"{m['Max drawdown (%)']:.1f}%")
     k5.metric("Turnover", f"{m['Average turnover']:.1%}")
-    st.plotly_chart(C.nav_chart(bundle.history, log=True), use_container_width=True)
+    st.plotly_chart(C.nav_chart(bundle.history, log=True, index_nav=bundle.index_nav,
+                                random_nav=bundle.random_nav),
+                    use_container_width=True)
     win = st.slider("Fenêtre glissante (périodes)", 8, 156,
                     26 if params["frequency"] == "weekly" else 126, key="an_win")
     rolling = analytics.rolling_metrics(bundle.history, ppy, window=win, rf_annual=params["rf"])
@@ -80,7 +82,8 @@ with tab2:
 
 with tab3:
     spans = analytics.regime_spans(regime_df["regime"])
-    fig = C.nav_chart(bundle.history, log=True)
+    fig = C.nav_chart(bundle.history, log=True, index_nav=bundle.index_nav,
+                      random_nav=bundle.random_nav)
     C.add_regime_bands(fig, spans)
     st.plotly_chart(fig, use_container_width=True)
     vc = regime_df["regime"].value_counts()
