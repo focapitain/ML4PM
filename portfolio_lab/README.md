@@ -46,8 +46,8 @@ portfolio_lab/
 │   ├── optimizers.py             # OPTIMISEURS (Strategy) :
 │   │                             #   AnalyticLagrangian, CVXPY, Scipy(SLSQP),
 │   │                             #   DifferentialEvolution + baselines de risque
-│   │                             #   (EqualWeight, InverseVolatility, RiskParity,
-│   │                             #    MaxDiversification)
+│   │                             #   (EqualWeight, RandomWeight, InverseVolatility,
+│   │                             #    RiskParity, MaxDiversification)
 │   ├── markowitz.py              # Benchmark INSTITUTIONNEL : ConstraintSet/PenaltySet,
 │   │                             #   MarkowitzPlusPlus (QP/SOCP unifié), make_variant,
 │   │                             #   harnais walk-forward dédié, calibration, sensibilité
@@ -68,9 +68,12 @@ portfolio_lab/
 │   ├── covariance.ipynb          # benchmark des estimateurs de Σ (2 axes : statistique + portef.)
 │   ├── markowitz.ipynb           # 5 formulations de Markowitz (standard→++), calibration, régimes
 │   ├── return.ipynb              # benchmark des estimateurs de μ (IC, robustesse, impact portef.)
+│   └── simulation.py             # SIMULATION à choc injecté : quel estimateur de Σ détecte
+│                                 #   le choc de volatilité le plus vite (délai de détection)
+├── benchmark_demo/               # démo Streamlit (overlay 1/N + S&P 500 + poids aléatoires)
 ├── test_pipeline.py              # tests de bout en bout (hors-ligne, synthétique)
 ├── requirements.txt
-└── READMEE.md
+└── README.md                     # (projet) ce package est documenté ici
 ```
 
 ### Principe de conception
@@ -156,6 +159,10 @@ finale écrit un **rapport horodaté** dans `results/` (cf. *Journalisation*).
 | `covariance.ipynb` | estimateur de **Σ** (Empirical, Rolling, EWMA, IEWMA, Ledoit-Wolf, OAS, Constant-Corr) — axes *statistique* (`cov_eval`) **et** *portefeuille* | μ = SampleMean ; objectif `min_variance` puis `max_sharpe` |
 | `return.ipynb` | estimateur de **μ** (SampleMean, RollingMean, EWMAMean, JamesStein, PCAFactor) — axes *prédictif* (`mean_eval`, IC) **et** *portefeuille* | Σ = Ledoit-Wolf ; objectif `max_sharpe` |
 | `markowitz.ipynb` | **formulation** (Standard, Linéaire, Opérationnelle, Robuste, Markowitz++) + calibration + analyse par régime | μ, Σ fixés ; univers fixé |
+
+> En complément, **`simulation.py`** (script, hors-ligne) génère des rendements synthétiques à
+> **choc de volatilité injecté** (date connue) et mesure le **délai de détection** de chaque
+> estimateur de Σ : EWMA/IEWMA réagissent nettement plus vite que l'empirique ou Ledoit-Wolf.
 
 > ⚠️ **Garde-fou de dégénérescence.** Avec un plafond `w_max`, l'espace admissible
 > `{w : Σw=1, 0≤w≤w_max}` se réduit à l'équipondéré dès que **N × w_max ≈ 1** : tous les objectifs

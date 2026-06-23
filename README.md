@@ -135,6 +135,7 @@ The benchmark demo is an interactive app that showcases how a Markowitz workflow
 - **Risk estimators ($\Sigma$)**: empirical and shrinkage/smoothed covariance estimators (for example Ledoit-Wolf/EWMA-style choices in the broader project workflows).
 - **Optimization objectives**: minimum variance and risk-adjusted formulations (e.g., max-Sharpe style objective under constraints).
 - **Portfolio constraints**: long-only settings, weight caps, and diversification sanity checks.
+- **Benchmarks overlaid**: every NAV chart compares the strategy against the equal-weight 1/N portfolio, the **S&P 500 index**, and a **random-weights** ("zero-intelligence") portfolio — each clearly labeled in the legend (animation and locator included).
 
 ### What the demo helps you answer
 
