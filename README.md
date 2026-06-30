@@ -1,34 +1,36 @@
+
 # Portfolio Management Project
 
 ## Objective
 
-In this project in Data science track at Telecom Paris, we try to implement a strategy of portofolio management thinks to the Markowitz theory.
-In this git we can find the complete report in lateX, the python code which gives us the graphs in part 1 and 2 of the report, Markowitz_sp500 gives us the the graphs of part 3 and an implementation of the strategy. Thanks to benchmark_demo we can access to an interactive animation which simulate our strategy. ( there is a readme in this directory which exlain how to launch it)
-In legacy_code there are all codes we use to think, try, research, test ...
+This project, developed as part of the Data Science track at Télécom Paris, implements a portfolio management strategy based on **Markowitz's Modern Portfolio Theory (MPT)**. 
 
-## Overview
+Within this repository, you will find:
+* **A complete report** written in LaTeX.
+* **Python scripts** used to generate the visual diagnostics and graphs for Parts 1 and 2 of the report.
+* `markowitz_sp500`: Scripts to generate the graphs for Part 3 and the core implementation of the strategy.
+* `benchmark_demo`: An interactive Streamlit application to simulate and visualize the strategy in real-time (a dedicated README inside this directory explains how to launch it).
+* `legacy_code`: A collection of scripts used during the research, testing, and brainstorming phases.
 
-A little overview of the concepts
+---
 
-### Markowitz in brief
+## Overview of Key Concepts
 
-Modern Portfolio Theory (Harry Markowitz) frames portfolio construction as a trade-off between
-**expected return** and **risk**. Instead of picking assets one by one, it optimizes portfolio
-weights jointly, using both each asset's volatility and how assets move together.
+### Markowitz in Brief
 
-At a high level, if $w$ is the vector of portfolio weights, $\mu$ the vector of expected returns,
-and $\Sigma$ the covariance matrix of returns:
+Modern Portfolio Theory (Harry Markowitz) frames portfolio construction as a trade-off between **expected return** and **risk**. Instead of selecting assets individually, it optimizes portfolio weights jointly by considering both individual asset volatility and their co-movements (covariance).
 
-- Expected portfolio return: $\mathbb{E}[R_p] = w^T\mu$
-- Portfolio variance (risk): $\sigma_p^2 = w^T\Sigma w$
-- Portfolio volatility: $\sigma_p = \sqrt{w^T\Sigma w}$
+At a high level, if $w$ is the vector of portfolio weights, $\mu$ the vector of expected returns, and $\Sigma$ the covariance matrix of returns:
 
-The key insight is diversification: two risky assets can reduce total risk if their covariance is
-low (or negative).
+* **Expected portfolio return:** $\mathbb{E}[R_p] = w^T\mu$
+* **Portfolio variance (risk):** $\sigma_p^2 = w^T\Sigma w$
+* **Portfolio volatility:** $\sigma_p = \sqrt{w^T\Sigma w}$
 
-Typical optimization problems used in this project are:
+The core insight is **diversification**: combining risky assets can reduce total portfolio risk if their covariance is low or negative.
 
-1. **Minimum variance for a target return**
+#### Optimization Problems Implemented:
+
+1. **Minimum Variance for a Target Return**
 
 $$
 \min_w \; w^T\Sigma w
@@ -36,99 +38,63 @@ $$
 w^T\mu = \mu_{\text{target}},\; \mathbf{1}^T w = 1
 $$
 
-2. **Maximum risk-adjusted return (Sharpe-style objective)**
+2. **Maximum Risk-Adjusted Return (Sharpe-style Objective)**
 
 $$
 \max_w \; \frac{w^T\mu - r_f}{\sqrt{w^T\Sigma w}}
-\quad \text{s.t. constraints (e.g. long-only, weight caps)}
+\quad \text{s.t. constraints (e.g., long-only, weight caps)}
 $$
 
-In practice, the project estimates $\mu$ and $\Sigma$ from historical data, solves one of these
-optimization problems under constraints, then evaluates the result out-of-sample with
-walk-forward backtesting.
+In practice, the pipeline estimates $\mu$ and $\Sigma$ from historical data, solves the optimization problem under specific constraints, and evaluates performance out-of-sample using a **walk-forward backtesting** protocol.
 
 ---
 
+## Main Modules
 
+### 1. `markowitz_sp500_V3`
 
-##  markowitz_sp500_V3
+**Goal:** Run highly configurable, scalable, and reproducible Markowitz experiments.
 
-Main goal: run configurable, reproducible Markowitz experiments at larger scale.
+**Features:**
+* **Centralized Configuration:** Settings are easily managed via `ExperimentConfig`.
+* **Universe Selectors:** Supports full universe, top-$N$, random-$N$, and sector-stratified sampling.
+* **Flexible Returns:** Supports multiple return modes and frequencies.
+* **Covariance Estimators:** Implements Empirical, Rolling, EWMA, and Ledoit-Wolf shrinkage estimators.
+* **Optimization:** Supports various objectives and optimizers.
+* **Analytics:** Generates comprehensive summary tables and visual diagnostics.
 
-What it does:
+> **Use Case:** Conducting comparative research and benchmarking across different estimators, objectives, and optimization constraints.
 
-- Centralizes experiment settings in `ExperimentConfig`.
-- Supports multiple universe selectors:
-  - all universe
-  - top N
-  - random N
-  - sector-stratified sample
-- Supports return modes and frequencies.
-- Supports multiple covariance estimators:
-  - empirical
-  - rolling
-  - EWMA
-  - Ledoit-Wolf
-- Supports multiple objectives and optimizers.
-- Generates summary tables and visual diagnostics.
+### 2. Benchmark Demo (Streamlit App)
 
-Typical use case:
+The benchmark demo is an interactive web application that showcases the entire Markowitz workflow in practice, from data loading to out-of-sample evaluation.
 
-- Comparative research/benchmarking across estimators, objectives, and optimization methods.
+#### Core Assumptions & Logic
+* **MPT Setup:** Portfolio construction relies on expected returns $\mu$, the covariance matrix $\Sigma$, and specific constraints.
+* **Walk-Forward Protocol:** To avoid look-ahead bias, the model is trained on a rolling historical window and evaluated on a future holding window.
+* **Transaction Costs:** Turnover is penalized to reflect realistic net performance rather than unrealistic gross returns.
+* **Risk-Adjusted Evaluation:** Diagnostics focus on risk/return trade-offs (volatility, maximum drawdown, Sharpe ratio, turnover) rather than absolute returns alone.
+* **Market Regimes:** Includes replay presets (e.g., historical stress periods) to test strategy robustness under volatile conditions.
 
----
+#### Features & Components
+* **Universe Construction:** Configurable asset selection to analyze the effects of concentration versus diversification.
+* **Estimators:** Sample mean and robust alternatives for returns ($\mu$); empirical and shrinkage/smoothed methods (Ledoit-Wolf, EWMA) for risk ($\Sigma$).
+* **Constraints:** Long-only constraints, weight caps, and diversification sanity checks.
+* **Baselines & Benchmarks:** Every Net Asset Value (NAV) chart compares the strategy against an **Equal-Weight ($1/N$) portfolio**, the **S&P 500 Index**, and a **Random-Weights** ("zero-intelligence") portfolio.
 
-
-## Benchmark demo (Streamlit)
-
-The benchmark demo is an interactive app that showcases how a Markowitz workflow is executed in practice, from data loading to out-of-sample evaluation.
-
-### Core assumptions
-
-- **Modern Portfolio Theory setup**: portfolio construction is based on expected returns $\mu$, covariance matrix $\Sigma$, and constraints.
-- **Walk-forward out-of-sample protocol**: the model is estimated on a rolling training window, then evaluated on a future holding window (anti look-ahead logic).
-- **Transaction costs matter**: turnover is penalized through transaction costs to avoid unrealistic gross-performance results.
-- **Risk-adjusted evaluation**: diagnostics focus on risk/return trade-offs (volatility, drawdown, Sharpe, turnover), not return alone.
-- **Data regime awareness**: replay presets (e.g., stress periods) help test robustness outside calm-market conditions.
-
-### Models and methods used
-
-- **Universe construction**: configurable asset selection (all, top-$N$, random, sector-stratified) to test concentration vs diversification effects.
-- **Return estimators ($\mu$)**: sample mean and robust alternatives depending on the selected method.
-- **Risk estimators ($\Sigma$)**: empirical and shrinkage/smoothed covariance estimators (for example Ledoit-Wolf/EWMA-style choices in the broader project workflows).
-- **Optimization objectives**: minimum variance and risk-adjusted formulations (e.g., max-Sharpe style objective under constraints).
-- **Portfolio constraints**: long-only settings, weight caps, and diversification sanity checks.
-- **Benchmarks overlaid**: every NAV chart compares the strategy against the equal-weight 1/N portfolio, the **S&P 500 index**, and a **random-weights** ("zero-intelligence") portfolio — each clearly labeled in the legend (animation and locator included).
-
-### What the demo helps you answer
-
-1. Which estimator/objective pair is most stable out-of-sample for a given universe?
-2. How sensitive are results to window length, rebalance cadence, and costs?
-3. Are strong in-sample results preserved once turnover and drawdown are considered?
-4. How does behavior change across different market regimes?
-
-### How it works in practice
-
-1. Configure assumptions from the sidebar (universe, model choices, protocol choices).
-2. Click **"Lancer la simulation"** to run the backtest.
-3. Inspect the decision timeline, NAV path, and risk diagnostics.
-4. Compare outcomes and export a report for reproducible interpretation.
-
-### How to run it
-
-From the project root:
-
-```bash
-pip install -r requirements.txt -r benchmark_demo/requirements-demo.txt
-cd benchmark_demo
-streamlit run Cockpit.py
-```
-
-Then open the local Streamlit URL shown in the terminal.
-
-Notes:
-
-- By default, the demo uses live yfinance data (internet required).
-- For offline or classroom/demo fallback, enable the synthetic data option in the app.
+#### Key Questions This Demo Answers:
+1. Which estimator/objective pair proves most stable out-of-sample for a given universe?
+2. How sensitive are the results to training window length, rebalancing cadence, and transaction fees?
+3. Are strong in-sample results preserved once turnover and drawdowns are taken into account?
+4. How does the portfolio behave across different market regimes?
 
 ---
+
+## Getting Started
+
+### How to Run the Streamlit Demo
+
+1. **Install dependencies** from the root directory:
+   ```bash
+   pip install -r requirements.txt -r benchmark_demo/requirements-demo.txt
+
