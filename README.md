@@ -1,17 +1,16 @@
 # Portfolio Management Project
 
+## Objective
+
+In this project in Data science track at Telecom Paris, we try to implement a strategy of portofolio management thinks to the Markowitz theory.
+In this git we can find the complete report in lateX, the python code which gives us the graphs in part 1 and 2 of the report, Markowitz_sp500 gives us the the graphs of part 3 and an implementation of the strategy. Thanks to benchmark_demo we can access to an interactive animation which simulate our strategy. ( there is a readme in this directory which exlain how to launch it)
+In legacy_code there are all codes we use to think, try, research, test ...
+
 ## Overview
 
-This repository now includes three complementary workflows around portfolio construction and evaluation:
+A little overview of the concepts
 
-- [Markowitz2-2.ipynb](./Markowitz2-2.ipynb): pedagogical notebook (core Markowitz formulas, Monte Carlo frontier, first experiments).
-- [markowitz_sp500_V2.ipynb](./markowitz_sp500_V2.ipynb): modular experimental framework on S&P 500 with interchangeable estimators/objectives/optimizers.
-- [backtest.py](./backtest.py): reusable walk-forward backtest engine.
-- [benchmark_demo/](./benchmark_demo): interactive Streamlit demo to run, visualize, and explain benchmark simulations end-to-end.
-
----
-
-## Markowitz in brief
+### Markowitz in brief
 
 Modern Portfolio Theory (Harry Markowitz) frames portfolio construction as a trade-off between
 **expected return** and **risk**. Instead of picking assets one by one, it optimizes portfolio
@@ -50,24 +49,9 @@ walk-forward backtesting.
 
 ---
 
-## Notebook 1: Markowitz2-2
 
-Main goal: build intuition and verify Markowitz mechanics on a smaller setup.
 
-What it does:
-
-- Downloads a subset of S&P 500 tickers.
-- Computes historical return vector and covariance matrix.
-- Implements closed-form optimization functions (`optimal1`, `optimal2`).
-- Compares analytical frontier points with a Monte Carlo efficient frontier.
-
-Typical use case:
-
-- Learning/debugging the optimization logic before moving to the larger framework.
-
----
-
-## Notebook 2: markowitz_sp500_V2
+##  markowitz_sp500_V3
 
 Main goal: run configurable, reproducible Markowitz experiments at larger scale.
 
@@ -94,27 +78,6 @@ Typical use case:
 
 ---
 
-## Backtesting Module (`backtest.py`)
-
-What it does:
-
-- Splits history into rolling train/test periods.
-- Fits portfolio weights on each training window.
-- Holds those weights for the next holding period.
-- Repeats this through time to simulate realistic rebalancing.
-- Applies transaction costs based on turnover.
-- Tracks strategy NAV and an equal-weight benchmark NAV.
-- Returns a history table, rebalance weight history, and summary metrics.
-
-Main metrics include:
-
-- Total return and CAGR
-- Annualized volatility and Sharpe ratio
-- Max drawdown
-- Tracking error vs benchmark
-- Average turnover and rebalance count
-
----
 
 ## Benchmark demo (Streamlit)
 
