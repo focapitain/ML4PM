@@ -6,11 +6,11 @@
 This project, developed as part of the Data Science track at Télécom Paris, implements a portfolio management strategy based on **Markowitz's Modern Portfolio Theory (MPT)**. 
 
 Within this repository, you will find:
-* **A complete report** written in LaTeX.
-* **Python scripts** used to generate the visual diagnostics and graphs for Parts 1 and 2 of the report.
-* `markowitz_sp500`: Scripts to generate the graphs for Part 3 and the core implementation of the strategy.
-* `benchmark_demo`: An interactive Streamlit application to simulate and visualize the strategy in real-time (a dedicated README inside this directory explains how to launch it).
-* `legacy_code`: A collection of scripts used during the research, testing, and brainstorming phases.
+* **A complete [report](Report__ML_based_portfolio_management.pdf)** written in LaTeX.
+* **Python [scripts](Graph_script.ipynb)** used to generate the visual diagnostics and graphs for Parts 1 and 2 of the report.
+* `markowitz_sp500`: [Scripts](markowitz_sp500_evaluation_V3.ipynb) to generate the graphs for Part 3 and the core implementation of the strategy.
+* `benchmark_demo`: An [interactive Streamlit application](benchmark_demo) to simulate and visualize the strategy in real-time (a dedicated README inside this directory explains how to launch it).
+* `legacy_code`: A [collection of scripts](legacy_code) used during the research, testing, and brainstorming phases.
 
 ---
 
